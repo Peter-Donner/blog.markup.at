@@ -12,7 +12,7 @@
             [stasis.core :as stasis]
             [clojure.string :refer [join split]]))
 
-(defn template [request body]
+(defn template [body]
   (html5
    [:head
     [:meta {:charset "utf-8"}]
@@ -26,9 +26,12 @@
    [:body
     (map (fn [x] x) body)]))
 
+(defn markdown-pages [pages]
+  (zipmap (map #(str/replace % #"\.md$" ".html") (keys pages))
+          (map #(template (md/to-html %)) (vals pages))))
+
 (defn index-page [request]
   (template
-   request
    [[:h1 "Lessions Learned als langjähriger Softwareentwickler"]
     [:p [:b "Peter Donner, 2016-11-11:"]
      " Nach 18 Jahren als Softwareentwickler in mehreren sehr unterschiedlichen Firmen glaube ich nun zu wissen, wie man es richtig und auch, wie man es falsch macht. Diese Erkenntnisse möchte ich in nächster Zeit in dieses Blog schreiben und starte einmal - vor allem für mich selbst - mit etwas Brainstorming."]
@@ -109,7 +112,10 @@
 
 
 (defn get-pages []
-  {"/" index-page})
+  (stasis/merge-page-sources
+   {:programmed {"/" index-page}
+    :markdown (markdown-pages
+               (stasis/slurp-directory "resources/markdown" #"\.md$"))}))
 
 (defn get-assets []
   [])
