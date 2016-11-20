@@ -28,7 +28,7 @@
 
 (defn markdown-pages [pages]
   (zipmap (map #(str/replace % #"\.md$" ".html") (keys pages))
-          (map #(template (md/to-html %)) (vals pages))))
+          (map #(template (md/to-html % [:quotes :smarts :strikethrough])) (vals pages))))
 
 (defn index-page [request]
   (template
