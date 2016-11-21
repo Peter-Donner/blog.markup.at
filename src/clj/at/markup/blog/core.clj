@@ -27,8 +27,12 @@
     (map (fn [x] x) body)]))
 
 (defn markdown-pages [pages]
+  ;; apparently :strikethrough needs :definitions
   (zipmap (map #(str/replace % #"\.md$" ".html") (keys pages))
-          (map #(template (md/to-html % [:quotes :smarts :strikethrough])) (vals pages))))
+          (map #(template
+                 (md/to-html
+                  % [:quotes :smarts :strikethrough :definitions]))
+               (vals pages))))
 
 (defn index-page [request]
   (template
