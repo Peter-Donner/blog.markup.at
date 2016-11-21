@@ -26,13 +26,20 @@
    [:body
     (map (fn [x] x) body)]))
 
+(defn ^:private markdown-to-html [markdown]
+  (md/to-html markdown
+              [:quotes :smarts :strikethrough :definitions]))
+
 (defn markdown-pages [pages]
   ;; apparently :strikethrough needs :definitions
   (zipmap (map #(str/replace % #"\.md$" ".html") (keys pages))
           (map #(template
-                 (md/to-html
-                  % [:quotes :smarts :strikethrough :definitions]))
+                 (markdown-to-html %))
                (vals pages))))
+
+(defn all-blogs-in-one-page [request]
+  (reduce (fn [a b] (markdown-to-html (str a "\n" b)))
+          (map (fn [x] (first (rest x))) (reverse (stasis/slurp-directory "resources/markdown" #"\.md$")))))
 
 (defn index-page [request]
   (template
@@ -118,6 +125,7 @@
 (defn get-pages []
   (stasis/merge-page-sources
    {:programmed {"/" index-page}
+    :all {"/all/" all-blogs-in-one-page}
     :markdown (markdown-pages
                (stasis/slurp-directory "resources/markdown" #"\.md$"))}))
 
