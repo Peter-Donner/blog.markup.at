@@ -29,35 +29,34 @@
     (map (fn [x] x) body)]))
 
 (defn ^:private markdown-to-html [markdown]
-  (md/to-html markdown
-              [:smarts :strikethrough :definitions]))
+  (md/to-html markdown [:smarts :strikethrough :definitions]))
 
 (defn ^:private markdown-pages [pages]
   ;; apparently :strikethrough needs :definitions
   (zipmap (map #(str/replace % #"\.md$" ".html") (keys pages))
           (map #(template
-                 (markdown-to-html %))
-               (vals pages))))
+                 (markdown-to-html %)) (vals pages))))
 
 (defn ^:private slurp-markdown-pages []
   (stasis/slurp-directory "resources/markdown" #"\.md$"))
 
-(defn ^:private all-blogs-in-one-page [request]
-  (reduce
-   (fn [a b] (markdown-to-html (str a "\n" b)))
-   (map (fn [x] (first (rest x)))
-        (reverse (slurp-markdown-pages)))))
+(defn ^:private wrap-with-link [content link]
+  (enlive/sniptest content
+                   [:h1] (enlive/wrap :a {:href link})))
 
-(defn enlive-test [request]
-  (println "enter enlive-test")
-  (enlive/sniptest (template [(all-blogs-in-one-page nil)])
-                   [:h1] (enlive/content "zonk")
-                   ))
+(defn ^:private all-blogs-in-one-page [request]
+  (template
+   (reduce
+    (fn [a b] (markdown-to-html (str a "\n" b)))
+    (map
+     (fn [x] (wrap-with-link
+              (markdown-to-html (first (rest x)))
+              (str/replace (first x) #"\.md$" ".html")))
+     (reverse (slurp-markdown-pages))))))
 
 (defn get-pages []
   (stasis/merge-page-sources
    {:all {"/" all-blogs-in-one-page}
-    :enlive {"/enlive/" enlive-test}
     :markdown (markdown-pages (slurp-markdown-pages))}))
 
 (defn ^:private get-assets []
