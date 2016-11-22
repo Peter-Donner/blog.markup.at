@@ -9,7 +9,7 @@
                  [stasis "2.3.0"]
                  [ring "1.4.0"]
                  [me.raynes/cegdown "0.1.1"]
-                 [enlive "1.1.5"]
+                 [enlive "1.1.6"]
                  [clygments "0.1.1"]
                  [optimus "0.19.0"]]
   :ring {:handler at.markup.blog.core/app}
