@@ -13,7 +13,11 @@
             [clojure.string :refer [join split]]
             [net.cgrand.enlive-html :as enlive]))
 
-(defn ^:private template [body]
+(def ^:private blog-homepage-link [:a {:href "/"} "&uarr; Blog Index"])
+
+(def ^:private kontakt-link [:a {:href "mailto:peter@markup.at"} "Kontakt (peter@markup.at)"])
+
+(defn ^:private index-template [body]
   (html5
    [:head
     [:meta {:charset "utf-8"}]
@@ -26,16 +30,30 @@
             :content "markup.at Blog"}]
     [:title "markup.at Blog"]]
    [:body
+    kontakt-link
     (map (fn [x] x) body)]))
+
+(defn ^:private article-template [body]
+  (let [header [blog-homepage-link " | " kontakt-link]
+        footer header]
+    (html5
+     [:head
+      [:meta {:charset "utf-8"}]
+      [:meta {:http-equiv "X-UA-Compatible"
+              :content "IE=edge"}]
+      [:meta {:http-equiv "Content-Type" :content "text/html; charset=utf-8"}]
+      [:meta {:name "viewport"
+              :content "width=device-width, initial-scale=1, shrink-to-fit=no"}]
+      [:meta {:name "description"
+              :content "markup.at Blog"}]
+      [:title "markup.at Blog"]]
+     [:body
+      (map (fn [x] x) header)
+      (map (fn [x] x) body)
+      (map (fn [x] x) footer)])))
 
 (defn ^:private markdown-to-html [markdown]
   (md/to-html markdown [:smarts :strikethrough :definitions]))
-
-(defn ^:private markdown-pages [pages]
-  ;; apparently :strikethrough needs :definitions
-  (zipmap (map #(str/replace % #"\.md$" ".html") (keys pages))
-          (map #(template
-                 (markdown-to-html %)) (vals pages))))
 
 (defn ^:private slurp-markdown-pages []
   (stasis/slurp-directory "resources/markdown" #"\.md$"))
@@ -45,7 +63,7 @@
                    [:h1] (enlive/wrap :a {:href link})))
 
 (defn ^:private all-blogs-in-one-page [request]
-  (template
+  (index-template
    (reduce
     (fn [a b] (markdown-to-html (str a "\n" b)))
     (map
@@ -53,6 +71,12 @@
               (markdown-to-html (first (rest x)))
               (str/replace (first x) #"\.md$" ".html")))
      (reverse (slurp-markdown-pages))))))
+
+(defn ^:private markdown-pages [pages]
+  ;; apparently :strikethrough needs :definitions
+  (zipmap (map #(str/replace % #"\.md$" ".html") (keys pages))
+          (map #(article-template
+                 (markdown-to-html %)) (vals pages))))
 
 (defn get-pages []
   (stasis/merge-page-sources
