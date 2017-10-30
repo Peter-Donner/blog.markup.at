@@ -80,7 +80,7 @@
    (clojure.string/join 
     (map (fn [[k v]]
            (wrap-with-link (markdown-to-html v) (str/replace k #"\.md$" ".html")))
-         (reverse (seq (slurp-markdown-pages)))))))
+         (reverse (sort-by first (seq (slurp-markdown-pages))))))))
 
 (defn ^:private markdown-pages [pages]
   (zipmap (map #(str/replace % #"\.md$" ".html") (keys pages))
